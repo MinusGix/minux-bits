@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<link rel="stylesheet" href="/css/main.css">
+	<link rel="stylesheet" href="/css/tacit.min.css" />
+	<title>Minux-Bits</title>
+</head>
+
+<body>
+	<section>
+		<header>
+			<nav>
+				<ul>
+					<li><a href="/">home</a></li>
+					<li><a href=".">about</a></li>
+					<li><a href="/projects/index.html">projects</a></li>
+				</ul>
+			</nav>
+		</header>
+		<article>
+			<p id="beginning">Direct2D and C</p>
+			<p>Note: These were all tested on Linux (Ubuntu). I used Wine to run the programs and mingw to build the `exe` file. (So if some of these problems aren't an issue with a windows supplied version of Direct2D headers and such, then I guess take this as some info for Linux and some that may pertain somewhat to Windows development.) I'm also not much of a C++ developer, so any C++ examples or saying something is similar to a C++ feature should be taken with at least a grain of salt.</p>
+			<p>Most everything I found online about Direct2D was for C++, which does admittedly make sense. The MSDN documentation was also extensively C++ related, but it is possible to use it with C. The header file includes various <code>#define</code>'s to make things easier and the like.</p>
+			<h2>General Structure</h2>
+			<p>The general structure of how they represent the C++ classes in C is like so:</p>
+			<TODO>Add small section box which talks about how the functions are actually defined.</TODO>
+			<code>struct ThingVtbl {
+	HRESULT (STDMETHODCALLTYPE *DoInterestingThing) (Thing *This, int num) PURE;
+};
+struct Thing {
+	const ThingVtbl *lpVtbl;
+};</code>
+			(<code>STDMETHODCALLTYPE</code> is just defined in winnt.h as <code>WINAPI</code>, there's also a few other similar names there as well)
+			Which emulates C++ methods, I presume, though I'm not sure as to the reason they make it a property of <code>lpVtbl</code> instead of just a global function.
+			Then, there's usually a macro'd item like:
+			<code>#define ID2D1Thing_DoInterestingThing(this,A) (this)->lpVtbl->DoInterestingThing(this,A,B,C)</code>
+			Which is easier to use instead of manually writing it out, though it is more wordy. It takes the <code>this</code> parameter as, well, itself as it's basically like:
+			<code>Thing::DoInterestingThing(A)</code> in C++.
+			Which works fairly well, if a bit annoying at times. Now, there is sometimes methods <i>missing</i>. Which can be annoying. Based on what little I've done as of writing this, the main things it seems to enjoy not having is the constructor methods. I'll go into that further in a later section.
+			Though, I should note that my my above example was somewhat simplified.
+			<code>#define STDMETHOD(method) HRESULT (STDMETHODCALLTYPE *method)
+#define STDMETHOD_(type, method) type (STDMETHODCALLTYPE *method)
+#define STDMETHODV(method) HRESULT (STDMETHODVCALLTYPE *method)
+#define STDMETHODV_(type, method) type (STDMETHODVCALLTYPE *method)</code>
+			(<code>STDMETHODCALLTYPE</code> being defined as <code>WINAPI</code>)
+			So, the <i>actual</i> code in the header would be:
+			<code>struct ThingVtbl {
+	STDMETHOD(DoInterestingThing)(Thing *This, int num) PURE;
+};</code>
+			<p>The actual-data-struct being the exact same. This makes things easier, I imagine so if they ever change functions that return HRESULT to return a different item than they can do it easily. *Shrug*.</p>
+
+			<h1>Common Patterns</h1>
+			<p>Note: There's a <i>lot</i> that could be added to this section. This is merely what I've written down as of this time, what I've experienced myself (since I have not nearly touched even a moderate portion of the Direct2D api) These also may be completely normal, uninteresting, patterns, but I'm making note of them anyway.</p>
+
+			<h2><code>HRESULT</code> status codes</h2>
+			It's common for there to be a result returned from an event, such as creating a HWND render target (<code>ID2D1Factory_CreateHwndRenderTarget</code>), finishing your drawing (<code>ID2D1HwndRenderTarget_EndDraw</code>) which return an <code>HRESULT</code>. An <code>HRESULT</code> is simply a typedef for a <code>LONG</code>, which is itself a typedef for the C type <code>long</code>. These are basically status codes which tell if you there was an error, or if it succeeded or not. (If the function is meant to create something, such as <code>ID2D1Factory_CreateHwndRenderTarge</code> you give it a pointer-to-a-pointer - which I'll explain in another Common Patterns section)
+			<a href="https://docs.microsoft.com/en-us/office/client-developer/outlook/mapi/hresult">HRESULT Documentation</a>, it seems to depend on the application specifically what errors they use, but there's a list of common ones here: <a href="https://docs.microsoft.com/en-us/windows/desktop/seccrypto/common-hresult-values">Common HRESULT Values</a> (though there's a whole host of errors defined in winerror.h). Most of these are failures, so you may think it's a good idea to do:
+			<code>if (myResult != S_OK) {
+	printf("Oh no, there was an error. Please report this to your local Windows Service Center for a refund of $0.00.");
+}</code>
+			But the way you should do this is via the <code>SUCCEEDED(hr)</code> macro, which just returns <code>hr >= 0</code>. So now, our code would be like so:
+			<code>if (!SUCCEEDED(myResult)) {
+	printf("Reality has fluctuated, and sadly macros cannot save us.");
+}</code>
+			Which, thankfully, is also pretty clear. Based on this, we know positive (including 0) HRESULTs are 'success', and negative values would mean a failure of some form.
+
+			<TODO>Perhaps make a section about a more detailed look into HRESULT? I'd have to look into it more deeply than I have so far.</TODO>
+
+			<h1>Irritations</h1>
+			<p>There are various irritating things that occur due to not writing this in C++, and here's some of them. Some of these may not be irritating to you, but they were to me.</p>
+
+			<TODO>Section on how there's no overloads in C so it makes things annoying having to provide everything</TODO>
+			<TODO>Section on no constructor methods</TODO>
+			<TODO>Section on SafeRelease, and mention my limited understanding.</TODO>
+
+			<h2><code>__uuidof</code></h2>
+			(<a href="https://docs.microsoft.com/en-us/cpp/cpp/uuidof-operator?view=vs-2019">Doc</a>)
+			This is a bit annoying, as this macro (defined in _mingw.h on my system, I don't know where it would be on a normal windows system) 
+			There is <a href="https://stackoverflow.com/questions/8868784/alternative-to-uuidof-in-c">this stackoverflow post</a>. When you need to use a guid you can simply get the globally available define for it, search your headers for the one you need.
+			<code>ID2D1Factory</code> becomes <code>IID_ID2D1Factory</code>, and they seem to always follow this pattern. This isn't a number (rather a list of numbers), and so usually the function you're using it with wants a reference to it.
+
+			<h1>Minor Notes/Issues</h1>
+			<p>Various issues that I had (which don't fit in the Irritations section), or notes about various things that aren't important enough to go elsewhere.</p>
+			<ul>
+				<li><code>HRESULT D2D1CreateFactory(D2D1_FACTORY_TYPE factoryType, const IID *const riid, const D2D1_FACTORY_OPTIONS *pFactoryOptions, void **ppIFactory)</code></li>
+				<ul>
+					<li>This is a hefty type signature. <a href="https://docs.microsoft.com/en-us/windows/desktop/api/d2d1/nf-d2d1-d2d1createfactory">MSDN page on it.</a></li>
+					<li><code>D2D1_FACTORY_TYPE factoryType</code><a href="https://docs.microsoft.com/en-us/windows/desktop/api/d2d1/ne-d2d1-d2d1_factory_type">Doc</a>. This just chooses how the synchronization with threads and the like are handled. Nothing too special.</li>
+					<li><code>const IID* const iid</code> See the <code>__uuidof</code> section, which explains this. The C++ MSDN docs say the type is a 'REFIID', but my mingw has it has an 'IID'. Unsure if it's just an outdated name in one of them, or they're just called differently for C. For this value, you just use <code>&IID_ID2D1Factory</code>.</li>
+					<li><code>const D2D1_FACTORY_OPTIONS *pFactoryOptions</code> (<a href="https://docs.microsoft.com/en-us/windows/desktop/api/d2d1/ns-d2d1-d2d1_factory_options">Docs</a>) simply a struct with one property named <code>debugLevel</code>.</li>
+					<li><code>void **ppIFactory</code> This function seems to have been made for various types of factories I presume, so it takes a void-pointer-pointer, and so you'll have to cast it to avoid gcc's errors (or perhaps mine has enough warning flags turned on). </li>
+				</ul>
+			</ul>
+			<h3></h3>
+		</article>
+		<footer>
+			<nav>
+				<ul>
+					<li><small><a href="https://github.com/MinusGix">GitHub</a></small></li>
+					<li><small><a href="https://github.com/MinusGix/minux-bits">This Site</a></small></li>
+				</ul>
+				<small><a href="https://github.com/yegor256/tacit">CSS Framework Used</a></small>
+			</nav>
+		</footer>
+	</section>
+</body>
+
+</html>
