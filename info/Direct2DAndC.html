@@ -72,7 +72,28 @@ struct Thing {
 			<h1>Irritations</h1>
 			<p>There are various irritating things that occur due to not writing this in C++, and here's some of them. Some of these may not be irritating to you, but they were to me.</p>
 
-			<TODO>Section on how there's no overloads in C so it makes things annoying having to provide everything</TODO>
+			<h2>Overloads, and the lacking thereof</h2>
+			<p>In C++, and other languages, there is the concept of overloads. This is a useful feature which I do admit to wishing was in C. An overload may be something like:
+				<code>int add_two (int a, int b) {
+return a + b;
+}</code>
+				and:
+				<code>int add_two (int a, float b) {
+return a + ((int)b);
+}</code>
+			Which would let you have two different functions with the same name that take different parameters, which can be useful for alternate typing (such as in this example) or optional parameters which Direct2D does quite enjoy using.
+
+			See: <a href="https://docs.microsoft.com/en-us/windows/desktop/api/d2d1/nf-d2d1-id2d1rendertarget-createsolidcolorbrush(constd2d1_color_f__constd2d1_brush_properties__id2d1solidcolorbrush)">CreateSolidColorBrush #1</a> and <a href="https://docs.microsoft.com/en-us/windows/desktop/api/d2d1/nf-d2d1-id2d1rendertarget-createsolidcolorbrush(constd2d1_color_f__id2d1solidcolorbrush)">CreateSolidColorBrush #2</a>
+			Two different definitions for the same function, which means overloading. Now this is especially an issue when following a guide, which is usually written in C++, which doesn't care that there's overloads.. but we do, because we can't use them.
+			If we find where this function is defined in d2d1.h, we find: <code>STDMETHOD(CreateSolidColorBrush)(ID2D1RenderTarget *This, const D2D1_COLOR_F *color, const D2D1_BRUSH_PROPERTIES *brushProperties, ID2D1SolidColorBrush **solidColorBrush) PURE;</code>
+			So it takes these types, and we can't skimp on any of them. The C++ library would simply auto-initialize you to some (likely sane) value if you didn't desire to customize it, but we shall have to manually create this. Now, this may not be much of an issue if we can use the constructor methods of those structs, but there is an issue of constructor methods not being redefined for C, and thus you'll have to manually write the structs.. which is lovely.
+			</p>
+			<!-- Unfinished
+			<h2>Not Defined Constructors</h2>
+			In C++, which uses classes, there is constructors which simply, well, construct a new instance based on parameters. It's basically a function built into the class which allows one to construct a new instance with a few parameters, rather than manually setting each and every one of them. They're not uncommon in C either, though they aren't direct methods 'on' the class.
+			A quite annoying issue with Direct2D is that there does not appear to be any constructors that are recreated for C. This can be quite irritating, especially when you run into strange math (such as Transforms) where having a simple "I don't want to do anything strange to this" option would be quite nice.
+			Here's an example, from <a href="https://docs.microsoft.com/en-us/windows/desktop/direct2d/getting-started-with-direct2d#step-3-create-an-id2d1hwndrendertarget">the MSDN Direct2D Getting Started guide, for C++ (No C version, sadly)</a>  uses <code>D2D1::SizeU(rc.right - rc.left, rc.bottom - rc.top);</code> which returns a SIZE_U instance (<code>D2D1_SIZE_U</code> in the C++ version. -->
+
 			<TODO>Section on no constructor methods</TODO>
 			<TODO>Section on SafeRelease, and mention my limited understanding.</TODO>
 
