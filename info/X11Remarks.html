@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<link rel="stylesheet" href="/css/main.css">
+	<link rel="stylesheet" href="/css/tacit.min.css" />
+	<title>Minux-Bits</title>
+</head>
+
+<body>
+	<section>
+		<header>
+			<nav>
+				<ul>
+					<li><a href="/">home</a></li>
+					<li><a href=".">about</a></li>
+					<li><a href="/projects/index.html">projects</a></li>
+				</ul>
+			</nav>
+		</header>
+		<article>
+			<p id="beginning">X11 Remarks</p>
+			<p>This is various notes/comments about X11, specifically using XLib.</p>
+			<p>Useful x11 xlib documentation: https://www.x.org/releases/X11R7.6/doc/libX11/specs/libX11/libX11.html#id2726364</p>
+
+			<h2>X11 Window Close Event</h2>
+			<p>X11 doesn't <i>exactly</i> have a window close event but it does have something pretty close, which took a bit of time to actually find.</p>
+			<code>WM_DELETE_WINDOW</code>
+			<p>Link where I learned this from: https://stackoverflow.com/questions/1157364/intercept-wm-delete-window-on-x11 but I'll explain it here too.</p>
+			<p>You have to create an <code>Atom</code> which I don't believe has anything to do with atomics</p>
+			<code>Atom wm_delete_window;</code>
+			<p>This stores the event. If you require an initializer for this - such as you aren't always listening for a close event like I was - then the initializer is the XLib defined value <code>None</code>.
+			Then <i>after</i> mapping the window (and possibly setting the flags? I'm not completely sure.) you do <code>wm_delete_window = XInternAtom(display, "WM_DELETE_WINDOW", False);</code> which basically says "I support the WM_DELETE_WINDOW" event, give me the identifier for it.
+			Once you've done that you still have a bit more left to go, you nee to do: <code>XSetWMProtocols(display, window, &wm_delete_window, 1);</code> which lets you receive the event I believe, adding it to the protocol support.
+
+			Once you have this, you can then detect it in your event-loop like so:
+			<code>if (event.type == ClientMessage) {
+	if ((Atom)event.xclient.data.l[0] == wm_delete_window)
+		// Do whatever you want here
+	}
+}</code>
+			Now, if you wanted to store your Atom because your code isn't structured in just a main loop, then you can store it just by value due to being just a typedef of a number (<code>unsigned long</code> in my case, but it may be platform dependant.)
+			</p>
+		</article>
+		<footer>
+			<nav>
+				<ul>
+					<li><small><a href="https://github.com/MinusGix">GitHub</a></small></li>
+					<li><small><a href="https://github.com/MinusGix/minux-bits">This Site</a></small></li>
+				</ul>
+				<small><a href="https://github.com/yegor256/tacit">CSS Framework Used</a></small>
+			</nav>
+		</footer>
+	</section>
+</body>
+
+</html>
