@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<link rel="stylesheet" href="/css/main.css">
+	<link rel="stylesheet" href="/css/tacit.min.css" />
+	<title>Minux-Bits</title>
+</head>
+
+<body>
+	<section>
+		<header>
+			<nav>
+				<ul>
+					<li><a href="/">home</a></li>
+					<li><a href=".">about</a></li>
+					<li><a href="/projects/index.html">projects</a></li>
+				</ul>
+			</nav>
+		</header>
+		<article>
+			<p id="beginning">Useful Notes About Win32</p>
+			<p>Note: this is focused on Win32 api and C, since that's what I was using when I wrote this. Some of the links are for C++ (since the majority of work with it is in C++, especially the graphics APIs like Direct2D), and require adaptation. If I feel like some of it needs to be explained in a 'C-fashion', then I will, though sometimes I don't write what I think as I don't feel like writing it at that moment :)</p>
+
+			<h2>Various Notes</h2>
+			<p>Various notes that I felt were useful to know.</p>
+			<ul>
+				<li>Having a way of searching the header files is a must for finding type definitions, especially for C, as the docs may list C++ function signatures which have overloads/optional-variables (and thus, you can pass in different values then you can in C). Often for C you have to pass in <i>all</i> the values, even if you don't wish too. Managing the defaults properly can be a pain, but looking at the C++ declarations in the headers (since they at times have defaults in them) can sometimes point you in the right direction for appropriate default.</li>
+				<li>Based on what I've looked into, you can't implement your own message loop entirely. (Without having a WndProc to do anything.) as some events are <i>directly</i> passed into the WndProc function, which makes manually handling everything (which is easier to design how you like) seemingly impossible. (See WM_SIZE for an example of one such event).</li>
+			</ul>
+
+			<h2>Useful Links:</h2>
+			<a href="https://web.archive.org/web/20071112112633/http://www.gamedev.net/reference/articles/article1810.asp">Goes over how to associate a pointer with a WndProc</a> which was quite useful, mainly can ignore the 'Message Handling' section.
+			<a href="https://stackoverflow.com/questions/117792/best-method-for-storing-this-pointer-for-use-in-wndproc">Stackoverflow posts on 'Best method for string pointer for use in WndProc'</a> Informative.
+			<a href="https://docs.microsoft.com/en-us/windows/desktop/LearnWin32/managing-application-state-">MSDN Article on Managing Application State, C++</a>
+			<a href="http://www.winprog.org/tutorial/start.html">theForger's Win32 API Programming Tutorial</a>. A good guide on the basics of creating a window, and various controls. If you don't want to use the RC syntax (you'll know what that is when you see it), then later sections eventually go over how to do it manually in code.
+			<a href="https://docs.microsoft.com/en-us/windows/desktop/gdi/windows-gdi">Windows GDI documentation</a>
+			<a href="http://zetcode.com/gui/winapi/">Zetcode winapi tutorial.</a> I've only skimmed this one but it seemed ok.
+			<a href="https://docs.microsoft.com/en-us/windows/desktop/api/winuser/ns-winuser-tagmsg">If you plan on directly using your MSG variable in your message loop</a> then looking at this would be a good idea. Note that DispatchMessage seems to do some handling by itself, so some codes are transformed into others/multiple.
+		</article>
+		<footer>
+			<nav>
+				<ul>
+					<li><small><a href="https://github.com/MinusGix">GitHub</a></small></li>
+					<li><small><a href="https://github.com/MinusGix/minux-bits">This Site</a></small></li>
+				</ul>
+				<small><a href="https://github.com/yegor256/tacit">CSS Framework Used</a></small>
+			</nav>
+		</footer>
+	</section>
+</body>
+
+</html>
